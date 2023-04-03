@@ -22,7 +22,7 @@ edgetpu = '0'  # make it '1' if Coral Accelerator is attached and use model with
 
 # Model and Label Files
 
-model_dir = 'models/custom'
+model_dir = os.path.join('models', 'custom')
 
 model = 'frc2023elements.tflite' # if not using edge tpu
 # model = 'frc2023elements_edgetpu.tflite' # if using edge tpu
@@ -41,7 +41,7 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
     invoke_interpreter(interpreter)
 
     global model_dir
-    if (model_dir == 'models/pretrained'):
+    if (model_dir == os.join('models', 'custom')):
         # for pre-trained models
         boxes = get_output_tensor(interpreter, 0)
         class_ids = get_output_tensor(interpreter, 1)
@@ -119,7 +119,7 @@ def make_interpreter(path, edgetpu):
     else:
         path, *device = path.split('@')
         interpreter = tf.lite.Interpreter(model_path=path, experimental_delegates=[
-            tf.lite.load_delegate(EDGETPU_SHARED_LIB, {'device': device[0]} if device else {})])
+            tf.lite.Interpreter.load_delegate(EDGETPU_SHARED_LIB, {'device': device[0]} if device else {})])
 
     print('Loading Model: {} '.format(path))
 
