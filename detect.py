@@ -11,7 +11,7 @@ Author: The Green Machine - 2023
 import time
 import numpy as np
 from PIL import Image
-import tflite_runtime.interpreter as tflite
+import tensorflow as tf
 
 import os
 import cv2
@@ -115,11 +115,11 @@ EDGETPU_SHARED_LIB = {
 def make_interpreter(path, edgetpu):
     print(path, edgetpu)
     if (edgetpu == '0'):
-        interpreter = tflite.Interpreter(model_path=path)
+        interpreter = tf.lite.Interpreter(model_path=path)
     else:
         path, *device = path.split('@')
-        interpreter = tflite.Interpreter(model_path=path, experimental_delegates=[
-            tflite.load_delegate(EDGETPU_SHARED_LIB, {'device': device[0]} if device else {})])
+        interpreter = tf.lite.Interpreter(model_path=path, experimental_delegates=[
+            tf.lite.load_delegate(EDGETPU_SHARED_LIB, {'device': device[0]} if device else {})])
 
     print('Loading Model: {} '.format(path))
 
