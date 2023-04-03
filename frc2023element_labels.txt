@@ -1,3 +1,0 @@
-0 cone
-1 cube
-2 tipped_cone
