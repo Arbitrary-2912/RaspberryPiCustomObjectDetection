@@ -22,7 +22,8 @@ The link to the notebook is [here](https://colab.research.google.com/drive/1EcGG
 The annotated data set created for this project is [here](https://app.roboflow.com/arb-spzob/frc-2023-game-element-detection/1).
 Annotations were performed with the help of roboFlow.
 
-The notebook provides a framework you to create and download a custom model for object detection using any custom dataset of choice.
+The notebook provides a framework to create and download a custom model for object detection using any custom dataset of choice. 
+From the notebook, the corresponding models and label files can be downloaded and uploaded into this project.
 
 
 ## Running your custom model
