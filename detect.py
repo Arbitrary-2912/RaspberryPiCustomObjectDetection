@@ -62,6 +62,10 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
                       ymin=np.maximum(0.0, ymin),
                       xmax=np.minimum(1.0, xmax),
                       ymax=np.minimum(1.0, ymax)))
+    def getArea(bbox):
+        return abs(bbox.xmax - bbox.xmin) * abs(bbox.ymax - bbox.ymin) # range: [0, 1]
+    def getCenter(bbox):
+        return [np.average(bbox.xmin, bbox.xmin), np.average(bbox.ymin, bbox.ymax)] # x_range: [0, 1], y_range: [0, 1]
 
     return [make(i) for i in range(top_k) if scores[i] >= score_threshold]
 
