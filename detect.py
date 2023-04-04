@@ -232,7 +232,7 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-        cv2.imshow('Detect Objects', cv2_im)
+        cv2.imshow('Green Vision Synapse', cv2_im)
 
         elapsed_ms = (time.time() - start_time) * 1000
         fps = round(1000 / elapsed_ms, 1)
