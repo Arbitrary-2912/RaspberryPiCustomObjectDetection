@@ -20,17 +20,25 @@ cap = cv2.VideoCapture(0)
 
 edgetpu = '0'  # make it '1' if Coral Accelerator is attached and use model with 'edgetpu' name
 
+# Camera properties
+horizontal_mount_offset = 0  # degrees
+vertical_mount_offset = 0  # degrees
+
+horizontal_FOV = 60  # degrees
+vertical_FOV = 60  # degrees
+
 # Model and Label Files
 
 model_dir = os.path.join('models', 'custom')
 
-model = 'frc2023elements.tflite' # if not using edge tpu
+model = 'frc2023elements.tflite'  # if not using edge tpu
 # model = 'frc2023elements_edgetpu.tflite' # if using edge tpu
 
 label = 'frc2023elements_labels.txt'
 
 model_path = os.path.join(model_dir, model)
 label_path = os.path.join(model_dir, label)
+
 
 # -------------------Object Detection--------------------#
 def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
@@ -53,6 +61,32 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
         count = int(get_output_tensor(interpreter, 2))
         class_ids = get_output_tensor(interpreter, 3)
 
+    def get_area(b):
+        return abs(b.xmax - b.xmin) * abs(b.ymax - b.ymin)  # range: [0, 1]
+
+    def get_center(b):
+        return (float(b.xmin) + float(b.xmax)) / 2, (float(b.ymin) + float(b.ymax)) / 2  # x_range: [0, 1], y_range: [0, 1]
+
+    def get_angles(b):
+        p = get_center(b)
+
+        px = p[0]
+        py = p[1]
+
+        nx = px - 0.5
+        ny = py - 0.5
+
+        vpw = 2 * np.tan(horizontal_FOV / 2.)  # visual plane width
+        vph = 2 * np.tan(vertical_FOV / 2.)  # visual plane height
+
+        x = vpw / 2 * nx
+        y = vph / 2 * ny
+
+        ax = np.arctan2(1, x)
+        ay = np.arctan2(1, y)
+
+        return float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset)
+
     def make(i):
         ymin, xmin, ymax, xmax = boxes[i]
         return Object(
@@ -61,19 +95,46 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
             bbox=BBox(xmin=np.maximum(0.0, xmin),
                       ymin=np.maximum(0.0, ymin),
                       xmax=np.minimum(1.0, xmax),
-                      ymax=np.minimum(1.0, ymax)))
-    def getArea(bbox):
-        return abs(bbox.xmax - bbox.xmin) * abs(bbox.ymax - bbox.ymin) # range: [0, 1]
-    def getCenter(bbox):
-        return [np.average(bbox.xmin, bbox.xmin), np.average(bbox.ymin, bbox.ymax)] # x_range: [0, 1], y_range: [0, 1]
+                      ymax=np.minimum(1.0, ymax)),
+            area=get_area(
+                BBox(xmin=np.maximum(0.0, xmin),
+                     ymin=np.maximum(0.0, ymin),
+                     xmax=np.minimum(1.0, xmax),
+                     ymax=np.minimum(1.0, ymax))),
+            center=Center(
+                xcenter=get_center(
+                    BBox(xmin=np.maximum(0.0, xmin),
+                         ymin=np.maximum(0.0, ymin),
+                         xmax=np.minimum(1.0, xmax),
+                         ymax=np.minimum(1.0, ymax)))[0],
+                ycenter=get_center(
+                    BBox(xmin=np.maximum(0.0, xmin),
+                         ymin=np.maximum(0.0, ymin),
+                         xmax=np.minimum(1.0, xmax),
+                         ymax=np.minimum(1.0, ymax)))[1]),
+            angles=Angles(
+                tx=get_angles(
+                    BBox(xmin=np.maximum(0.0, xmin),
+                         ymin=np.maximum(0.0, ymin),
+                         xmax=np.minimum(1.0, xmax),
+                         ymax=np.minimum(1.0, ymax))
+                )[0],
+                ty=get_angles(
+                    BBox(xmin=np.maximum(0.0, xmin),
+                         ymin=np.maximum(0.0, ymin),
+                         xmax=np.minimum(1.0, xmax),
+                         ymax=np.minimum(1.0, ymax))
+                )[1]
+            ))
 
     return [make(i) for i in range(top_k) if scores[i] >= score_threshold]
+
 
 # --------------------------------------------------------------------------
 
 import collections
 
-Object = collections.namedtuple('Object', ['id', 'score', 'bbox'])
+Object = collections.namedtuple('Object', ['id', 'score', 'bbox', 'area', 'center', 'angles'])
 
 
 class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
@@ -83,10 +144,25 @@ class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
     """
     __slots__ = ()
 
+
+class Center(collections.namedtuple('Center', ['xcenter', 'ycenter'])):
+    """Center.
+    Utility to parse object center
+    """
+    __slots__ = ()
+
+
+class Angles(collections.namedtuple('Angles', ['tx', 'ty'])):
+    """Center.
+    Utility to parse object center
+    """
+    __slots__ = ()
+
 # --------------------------------------------------------------------------
 
 # Labeling
 import re
+
 
 def load_labels(path):
     """Loads the labels file. Supports files with or without index numbers."""
@@ -205,6 +281,7 @@ def overlay_text_detection(objs, labels, cv2_im, fps):
 
     return cv2_im
 
+
 # --------------------------------------------------------------------------
 
 def main():
@@ -212,7 +289,8 @@ def main():
 
     interpreter.allocate_tensors()
 
-    labels = load_labels('models\\custom\\frc2023element_labels.txt') # TODO fix os.path.join() parsing that adds two slashes for windows
+    labels = load_labels(
+        'models\\custom\\frc2023element_labels.txt')  # TODO fix os.path.join() parsing that adds two slashes for windows
 
     fps = 1
 
