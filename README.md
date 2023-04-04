@@ -4,13 +4,14 @@
 
 </p>
 
-This repository contains a python script and few Object Detection models. 
+This repository contains a python script and a few Object Detection models utilizing TensorFLow Lite. 
 These models are placed in two folders i.e. 'custom' and 'pretrained'. 
-The model in 'custom' folder is created using Tensorflow Lite Model maker and trained to detect game elements.
+The models located in the 'custom' folder are created using the Tensorflow Lite Model maker and can be trained to detect various objects from a desired dataset.
+In this case, that dataset happens to be field elements from the 2023 FRC Competition Charged Up.
 
 The models in 'pretrained' folder are downloaded from [coral.ai](https://coral.ai/models/object-detection/) website. These pretrained models are trained with COCO dataset to detect 90 types of objects.
 
-The python script can be used to run a custom as well as pretrained model. It also supports Google Coral USB accelerator to speed up the inferencing process.
+The python script can be used to run a custom as well as a pretrained model. It also supports the use of a Google Coral USB accelerator to speed up the inferencing process or any other Edge TPU containing device.
 
 ## Training the Model with your data
 
