@@ -31,7 +31,7 @@ label = 'frc2023elements_labels.txt'
 
 model_path = os.path.join(model_dir, model)
 label_path = os.path.join(model_dir, label)
-
+print(label_path)
 
 # -------------------Object Detection--------------------#
 def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
@@ -41,7 +41,7 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
     invoke_interpreter(interpreter)
 
     global model_dir
-    if (model_dir == os.join('models', 'custom')):
+    if (model_dir == os.path.join('models', 'pretrained')):
         # for pre-trained models
         boxes = get_output_tensor(interpreter, 0)
         class_ids = get_output_tensor(interpreter, 1)
@@ -209,7 +209,7 @@ def main():
 
     interpreter.allocate_tensors()
 
-    labels = load_labels(label_path)
+    labels = load_labels('models\\custom\\frc2023element_labels.txt')
 
     fps = 1
 
