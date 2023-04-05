@@ -24,8 +24,8 @@ edgetpu = '0'  # make it '1' if Coral Accelerator is attached and use model with
 horizontal_mount_offset = 0  # degrees
 vertical_mount_offset = 0  # degrees
 
-horizontal_FOV = 60  # degrees
-vertical_FOV = 60  # degrees
+horizontal_FOV = 45  # degrees
+vertical_FOV = 45  # degrees
 
 # Model and Label Files
 
@@ -65,7 +65,8 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
         return abs(b.xmax - b.xmin) * abs(b.ymax - b.ymin)  # range: [0, 1]
 
     def get_center(b):
-        return (float(b.xmin) + float(b.xmax)) / 2, (float(b.ymin) + float(b.ymax)) / 2  # x_range: [0, 1], y_range: [0, 1]
+        return (float(b.xmin) + float(b.xmax)) / 2, (
+                float(b.ymin) + float(b.ymax)) / 2  # x_range: [0, 1], y_range: [0, 1]
 
     def get_angles(b):
         p = get_center(b)
@@ -73,17 +74,17 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
         px = p[0].real
         py = p[1].real
 
-        nx = px - 0.5
-        ny = 0.5 - py
+        nx = px - 0.5  # normalizing coordinates
+        ny = 0.5 - py  # normalizing coordinates
 
-        vpw = 2 * np.tan(horizontal_FOV / 2.)  # visual plane width
-        vph = 2 * np.tan(vertical_FOV / 2.)  # visual plane height
+        vpw = 2.0 * np.tan(horizontal_FOV / 2)  # visual plane width
+        vph = 2.0 * np.tan(vertical_FOV / 2)  # visual plane height
 
         x = vpw / 2 * nx
         y = vph / 2 * ny
 
-        ax = np.arctan2(1, x) * 180 / math.pi - 3 * horizontal_FOV / 2
-        ay = np.arctan2(1, y) * 180 / math.pi - 3 * vertical_FOV / 2
+        ax = np.arctan(x) * 180 / math.pi
+        ay = np.arctan(y) * 180 / math.pi
 
         return float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset)
 
@@ -157,6 +158,7 @@ class Angles(collections.namedtuple('Angles', ['tx', 'ty'])):
     Utility to parse object center
     """
     __slots__ = ()
+
 
 # --------------------------------------------------------------------------
 
