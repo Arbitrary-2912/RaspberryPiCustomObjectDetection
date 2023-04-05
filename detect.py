@@ -24,8 +24,15 @@ edgetpu = '0'  # make it '1' if Coral Accelerator is attached and use model with
 horizontal_mount_offset = 0  # degrees
 vertical_mount_offset = 0  # degrees
 
+# Angles
 horizontal_FOV = 45  # degrees
-vertical_FOV = 45  # degrees
+vertical_FOV = 40  # degrees
+
+# Distance (object_width / detected_pixel_width * focal_length)
+frame_width = 0.106  # meters (measured relay pixel correspondence / literal width of frame)
+frame_height = 0.151  # meters (measured relay pixel correspondence / literal height of frame)
+focal_length = 0.5  # meters (calibrated camera specific value)
+object_width = 0.25  # meters (tuned width, can vary from object to object)
 
 # Model and Label Files
 
@@ -88,6 +95,10 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
 
         return float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset)
 
+    def get_distance(b):
+        pw = (b.xmax - b.xmin) * frame_width
+        return object_width * focal_length / pw
+
     def make(i):
         ymin, xmin, ymax, xmax = boxes[i]
         return Object(
@@ -126,6 +137,12 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
                          xmax=np.minimum(1.0, xmax),
                          ymax=np.minimum(1.0, ymax))
                 )[1]
+            ),
+            distance=get_distance(
+                BBox(xmin=np.maximum(0.0, xmin),
+                     ymin=np.maximum(0.0, ymin),
+                     xmax=np.minimum(1.0, xmax),
+                     ymax=np.minimum(1.0, ymax))
             ))
 
     return [make(i) for i in range(top_k) if scores[i] >= score_threshold]
@@ -135,7 +152,7 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
 
 import collections
 
-Object = collections.namedtuple('Object', ['id', 'score', 'bbox', 'area', 'center', 'angles'])
+Object = collections.namedtuple('Object', ['id', 'score', 'bbox', 'area', 'center', 'angles', 'distance'])
 
 
 class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
@@ -311,9 +328,6 @@ def main():
         image = Image.fromarray(cv2_im_rgb)
 
         results = detect_objects(interpreter, image)
-        if len(results) > 0:
-            print(results[0].angles)
-
         cv2_im = overlay_text_detection(results, labels, cv2_im, fps)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
