@@ -8,6 +8,7 @@ https://www.tensorflow.org/lite/examples
 Author: The Green Machine - 2023
 """
 import math
+import sys
 import time
 import numpy as np
 from PIL import Image
@@ -48,8 +49,10 @@ label_path = os.path.join(model_dir, label)
 
 
 # -------------------Object Detection--------------------#
-def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
-    """Returns list of detected objects."""
+def detect_objects(interpreter, image, score_threshold=0.3, top_k=3):
+    """Returns list of detected objects"""
+    # score_threshold: minimal detection threshold (likelihood)
+    # top_k: detection upper limit
     set_input_tensor(interpreter, image)
     # interpreter.invoke()
     invoke_interpreter(interpreter)
@@ -69,13 +72,16 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
         class_ids = get_output_tensor(interpreter, 3)
 
     def get_area(b):
+        """Returns the area of a bounding box"""
         return abs(b.xmax - b.xmin) * abs(b.ymax - b.ymin)  # range: [0, 1]
 
     def get_center(b):
+        """Returns the coordinates of the center of a bounding box"""
         return (float(b.xmin) + float(b.xmax)) / 2, (
                 float(b.ymin) + float(b.ymax)) / 2  # x_range: [0, 1], y_range: [0, 1]
 
     def get_angles(b):
+        """Returns x and y angles (in degrees) of the center of a bounding box"""
         p = get_center(b)
 
         px = p[0].real
@@ -96,10 +102,13 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
         return float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset)
 
     def get_distance(b):
+        """Returns distance to an object based on focal ratios"""
+        # Can be replaced with depth sensing or fixed locus depth mapping
         pw = (b.xmax - b.xmin) * frame_width
         return object_width * focal_length / pw
 
     def make(i):
+        """Makes a named tuple that contains output data for each detected object"""
         ymin, xmin, ymax, xmax = boxes[i]
         return Object(
             id=int(class_ids[i]),
@@ -156,23 +165,26 @@ Object = collections.namedtuple('Object', ['id', 'score', 'bbox', 'area', 'cente
 
 
 class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
-    """Bounding box.
+    """
+    Bounding box
     Represents a rectangle which sides are either vertical or horizontal, parallel
-    to the x or y axis.
+    to the x or y axis
     """
     __slots__ = ()
 
 
 class Center(collections.namedtuple('Center', ['xcenter', 'ycenter'])):
-    """Center.
-    Utility to parse object center
+    """
+    Center
+    Represents a ordered pair that points to the center of the bounding box
     """
     __slots__ = ()
 
 
 class Angles(collections.namedtuple('Angles', ['tx', 'ty'])):
-    """Center.
-    Utility to parse object center
+    """
+    Angles
+    Represents an ordered pair that points to the absolute angle of the target
     """
     __slots__ = ()
 
@@ -184,7 +196,10 @@ import re
 
 
 def load_labels(path):
-    """Loads the labels file. Supports files with or without index numbers."""
+    """
+    Loads the labels file
+    Supports files with or without index numbers
+    """
 
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
@@ -211,6 +226,9 @@ EDGETPU_SHARED_LIB = {
 
 
 def make_interpreter(path, edgetpu):
+    """
+    Creates the tflite interpreter based on environment
+    """
     print(path, edgetpu)
     if (edgetpu == '0'):
         interpreter = tf.lite.Interpreter(model_path=path)
@@ -227,13 +245,13 @@ def make_interpreter(path, edgetpu):
 # --------------------------------------------------------------------------
 
 def input_image_size(interpreter):
-    """Returns input image size as (width, height, channels) tuple."""
+    """Returns input image size as (width, height, channels) tuple"""
     _, height, width, channels = interpreter.get_input_details()[0]['shape']
     return width, height, channels
 
 
 def set_input_tensor(interpreter, image):
-    """Sets the input tensor."""
+    """Sets the input tensor"""
     image = image.resize((input_image_size(interpreter)[0:2]), resample=Image.NEAREST)
     # input_tensor(interpreter)[:, :] = image
 
@@ -243,7 +261,7 @@ def set_input_tensor(interpreter, image):
 
 
 def get_output_tensor(interpreter, index):
-    """Returns the output tensor at the given index."""
+    """Returns the output tensor at the given index"""
     output_details = interpreter.get_output_details()[index]
     # print(output_details)
     tensor = np.squeeze(interpreter.get_tensor(output_details['index']))
@@ -251,6 +269,7 @@ def get_output_tensor(interpreter, index):
 
 
 def invoke_interpreter(interpreter):
+    """Invokes the tf interpreter"""
     global inference_time_ms
 
     t1 = time.time()
@@ -262,6 +281,7 @@ def invoke_interpreter(interpreter):
 # --------------------------------------------------------------------------
 
 def overlay_text_detection(objs, labels, cv2_im, fps):
+    """Displays bounding box and overlays labels onto detected objects"""
     height, width, channels = cv2_im.shape
     font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -304,13 +324,19 @@ def overlay_text_detection(objs, labels, cv2_im, fps):
 # --------------------------------------------------------------------------
 
 def main():
+    """Main detection function"""
     interpreter = make_interpreter(model_path, edgetpu)
 
     interpreter.allocate_tensors()
 
-    labels = load_labels(
-        'models\\custom\\frc2023element_labels.txt')  # TODO fix os.path.join() parsing that adds two slashes for windows
-
+    if sys.platform == "win32":
+        labels = load_labels(
+            'models\\custom\\frc2023element_labels.txt'
+        )  # minor fix for Windows os file pathing
+    else:
+        labels = load_labels(
+            os.path.join(model_dir, label)
+        )
     fps = 1
 
     while True:
@@ -328,7 +354,7 @@ def main():
         image = Image.fromarray(cv2_im_rgb)
 
         results = detect_objects(interpreter, image)
-        cv2_im = overlay_text_detection(results, labels, cv2_im, fps)
+        cv2_im = overlay_text_detection(results, labels, cv2_im, fps) # (comment out to speed up processing)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
