@@ -11,8 +11,9 @@ import math
 import sys
 import time
 import numpy as np
-from PIL import Image
 import tensorflow as tf
+
+from PIL import Image
 
 import os
 import cv2
