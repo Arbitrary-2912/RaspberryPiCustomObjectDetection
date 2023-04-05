@@ -7,7 +7,7 @@ https://www.tensorflow.org/lite/examples
 
 Author: The Green Machine - 2023
 """
-
+import math
 import time
 import numpy as np
 from PIL import Image
@@ -70,11 +70,11 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
     def get_angles(b):
         p = get_center(b)
 
-        px = p[0]
-        py = p[1]
+        px = p[0].real
+        py = p[1].real
 
         nx = px - 0.5
-        ny = py - 0.5
+        ny = 0.5 - py
 
         vpw = 2 * np.tan(horizontal_FOV / 2.)  # visual plane width
         vph = 2 * np.tan(vertical_FOV / 2.)  # visual plane height
@@ -82,8 +82,8 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=6):
         x = vpw / 2 * nx
         y = vph / 2 * ny
 
-        ax = np.arctan2(1, x)
-        ay = np.arctan2(1, y)
+        ax = np.arctan2(1, x) * 180 / math.pi - 3 * horizontal_FOV / 2
+        ay = np.arctan2(1, y) * 180 / math.pi - 3 * vertical_FOV / 2
 
         return float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset)
 
@@ -309,6 +309,9 @@ def main():
         image = Image.fromarray(cv2_im_rgb)
 
         results = detect_objects(interpreter, image)
+        if len(results) > 0:
+            print(results[0].angles)
+
         cv2_im = overlay_text_detection(results, labels, cv2_im, fps)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
