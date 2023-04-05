@@ -38,6 +38,9 @@ focal_length = 0.5  # meters (calibrated camera specific value)
 cube_diagonal_width = 0.34  # meters (object diagonal width, measured for cube)
 cone_diagonal_width = 0.39  # meters (object diagonal width, measured for cone)
 
+cube_min_max_ratio = 1  # ratio of longest side to shortest in standard bounding box (can be used for skew metrics)
+cone_min_max_ratio = 1.57  # ratio of longest side to shortest in standard bounding box (can be used for skew metrics)
+
 # Model and Label Files
 
 model_dir = os.path.join('models', 'custom')
@@ -116,53 +119,31 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=3):
     def make(i):
         """Makes a named tuple that contains output data for each detected object"""
         ymin, xmin, ymax, xmax = boxes[i]
+        b = BBox(
+            xmin=np.maximum(0.0, xmin),
+            ymin=np.maximum(0.0, ymin),
+            xmax=np.minimum(1.0, xmax),
+            ymax=np.minimum(1.0, ymax)
+        )
         return Object(
             id=int(class_ids[i]),
             score=scores[i],
-            bbox=BBox(xmin=np.maximum(0.0, xmin),
-                      ymin=np.maximum(0.0, ymin),
-                      xmax=np.minimum(1.0, xmax),
-                      ymax=np.minimum(1.0, ymax)),
-            area=get_area(
-                BBox(xmin=np.maximum(0.0, xmin),
-                     ymin=np.maximum(0.0, ymin),
-                     xmax=np.minimum(1.0, xmax),
-                     ymax=np.minimum(1.0, ymax))),
+            bbox=b,
+            area=get_area(b),
             center=Center(
-                xcenter=get_center(
-                    BBox(xmin=np.maximum(0.0, xmin),
-                         ymin=np.maximum(0.0, ymin),
-                         xmax=np.minimum(1.0, xmax),
-                         ymax=np.minimum(1.0, ymax)))[0],
-                ycenter=get_center(
-                    BBox(xmin=np.maximum(0.0, xmin),
-                         ymin=np.maximum(0.0, ymin),
-                         xmax=np.minimum(1.0, xmax),
-                         ymax=np.minimum(1.0, ymax)))[1]),
+                xcenter=get_center(b)[0],
+                ycenter=get_center(b)[1]),
             angles=Angles(
-                tx=get_angles(
-                    BBox(xmin=np.maximum(0.0, xmin),
-                         ymin=np.maximum(0.0, ymin),
-                         xmax=np.minimum(1.0, xmax),
-                         ymax=np.minimum(1.0, ymax))
-                )[0],
-                ty=get_angles(
-                    BBox(xmin=np.maximum(0.0, xmin),
-                         ymin=np.maximum(0.0, ymin),
-                         xmax=np.minimum(1.0, xmax),
-                         ymax=np.minimum(1.0, ymax))
-                )[1]
+                tx=get_angles(b)[0],
+                ty=get_angles(b)[1]
             ),
             distance=get_distance(
                 int(class_ids[i]),
-                BBox(xmin=np.maximum(0.0, xmin),
-                     ymin=np.maximum(0.0, ymin),
-                     xmax=np.minimum(1.0, xmax),
-                     ymax=np.minimum(1.0, ymax))
-            ))
+                b
+            )
+        )
 
     return [make(i) for i in range(top_k) if scores[i] >= score_threshold]
-
 
 # --------------------------------------------------------------------------
 
@@ -361,7 +342,7 @@ def main():
         image = Image.fromarray(cv2_im_rgb)
 
         results = detect_objects(interpreter, image)
-        cv2_im = overlay_text_detection(results, labels, cv2_im, fps) # (comment out to speed up processing)
+        cv2_im = overlay_text_detection(results, labels, cv2_im, fps)  # (comment out to speed up processing)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
