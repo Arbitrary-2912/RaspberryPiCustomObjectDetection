@@ -25,8 +25,8 @@ horizontal_mount_offset = 0  # degrees
 vertical_mount_offset = 0  # degrees
 
 # Angles
-horizontal_FOV = 45  # degrees
-vertical_FOV = 40  # degrees
+horizontal_FOV = 62.2  # degrees
+vertical_FOV = 48.8  # degrees
 
 # Distance (object_width / detected_pixel_width * focal_length)
 frame_width = 0.106  # meters (measured relay pixel correspondence / literal width of frame)
