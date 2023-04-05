@@ -33,7 +33,10 @@ vertical_FOV = 48.8  # degrees
 frame_width = 0.106  # meters (measured relay pixel correspondence / literal width of frame)
 frame_height = 0.151  # meters (measured relay pixel correspondence / literal height of frame)
 focal_length = 0.5  # meters (calibrated camera specific value)
-object_width = 0.25  # meters (tuned width, can vary from object to object)
+
+# Object dimensions (for distance measurement)
+cube_diagonal_width = 0.34  # meters (object diagonal width, measured for cube)
+cone_diagonal_width = 0.39  # meters (object diagonal width, measured for cone)
 
 # Model and Label Files
 
@@ -101,11 +104,14 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=3):
 
         return float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset)
 
-    def get_distance(b):
+    def get_distance(id, b):
         """Returns distance to an object based on focal ratios"""
         # Can be replaced with depth sensing or fixed locus depth mapping
-        pw = (b.xmax - b.xmin) * frame_width
-        return object_width * focal_length / pw
+        dpw = math.hypot(b.xmax - b.xmin, b.ymax - b.ymin) * frame_width
+        if id == 0:  # cone (labels.txt)
+            return cone_diagonal_width * focal_length / dpw
+        else:  # cube (labels.txt)
+            return cube_diagonal_width * focal_length / dpw
 
     def make(i):
         """Makes a named tuple that contains output data for each detected object"""
@@ -148,6 +154,7 @@ def detect_objects(interpreter, image, score_threshold=0.3, top_k=3):
                 )[1]
             ),
             distance=get_distance(
+                int(class_ids[i]),
                 BBox(xmin=np.maximum(0.0, xmin),
                      ymin=np.maximum(0.0, ymin),
                      xmax=np.minimum(1.0, xmax),
