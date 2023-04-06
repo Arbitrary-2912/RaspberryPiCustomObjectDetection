@@ -116,10 +116,10 @@ def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
         dpw = math.hypot(b.xmax - b.xmin, b.ymax - b.ymin) * frame_width
         x_dist = y_dist = 0
         if id == 0:  # cone (labels.txt)
-            x_dist = cone_diagonal_width * focal_length / dpw
+            x_dist = cone_diagonal_width * focal_length / dpw / 4
         else:  # cube (labels.txt)
-            x_dist = cube_diagonal_width * focal_length / dpw
-        y_dist = x_dist * math.atan(get_angles(b)[0]) * 180 / math.pi
+            x_dist = cube_diagonal_width * focal_length / dpw / 4
+        y_dist = x_dist * math.tan(get_angles(b)[0] * math.pi / 180)
         return Point(x_dist, y_dist)  # meters
 
     def make(i):
@@ -345,6 +345,9 @@ def main():
 
         results = detect_objects(interpreter, image)
         cv2_im = overlay_text_detection(results, labels, cv2_im, fps)  # (comment out to speed up processing)
+
+        if len(results) > 0:
+            print(results[0])
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
