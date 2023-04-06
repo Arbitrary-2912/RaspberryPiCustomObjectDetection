@@ -56,7 +56,7 @@ label_path = os.path.join(model_dir, label)
 
 
 # -------------------Object Detection--------------------#
-def detect_objects(interpreter, image, score_threshold=0.3, top_k=3):
+def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
     """Returns list of detected objects"""
     # score_threshold: minimal detection threshold (likelihood)
     # top_k: detection upper limit
