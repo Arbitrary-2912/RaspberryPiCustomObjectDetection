@@ -119,7 +119,7 @@ def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
             x_dist = cone_diagonal_width * focal_length / dpw
         else:  # cube (labels.txt)
             x_dist = cube_diagonal_width * focal_length / dpw
-        y_dist = x_dist*math.atan(get_angles(b)[0])*180/math.pi
+        y_dist = x_dist * math.atan(get_angles(b)[0]) * 180 / math.pi
         return Point(x_dist, y_dist)  # meters
 
     def make(i):
@@ -146,6 +146,7 @@ def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
 
     return [make(i) for i in range(top_k) if scores[i] >= score_threshold]
 
+
 # --------------------------------------------------------------------------
 
 import collections
@@ -161,6 +162,7 @@ class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
     """
     __slots__ = ()
 
+
 class Angles(collections.namedtuple('Angles', ['tx', 'ty'])):
     """
     Angles
@@ -168,12 +170,15 @@ class Angles(collections.namedtuple('Angles', ['tx', 'ty'])):
     """
     __slots__ = ()
 
+
 class Point(collections.namedtuple('Angles', ['x', 'y'])):
     """
     Point
     Represents an ordered pair
     """
     __slots__ = ()
+
+
 # --------------------------------------------------------------------------
 
 # Labeling
