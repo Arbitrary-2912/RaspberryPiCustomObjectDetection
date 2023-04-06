@@ -84,8 +84,10 @@ def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
 
     def get_center(b):
         """Returns the coordinates of the center of a bounding box"""
-        return (float(b.xmin) + float(b.xmax)) / 2, (
-                float(b.ymin) + float(b.ymax)) / 2  # x_range: [0, 1], y_range: [0, 1]
+        return Point(
+            (float(b.xmin) + float(b.xmax)) / 2,
+            (float(b.ymin) + float(b.ymax)) / 2
+        )  # x_range: [0, 1], y_range: [0, 1]
 
     def get_angles(b):
         """Returns x and y angles (in degrees) of the center of a bounding box"""
@@ -106,16 +108,19 @@ def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
         ax = np.arctan(x) * 180 / math.pi
         ay = np.arctan(y) * 180 / math.pi
 
-        return float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset)
+        return Angles(float(ax + horizontal_mount_offset), float(ay + vertical_mount_offset))  # degrees
 
     def get_distance(id, b):
         """Returns distance to an object based on focal ratios"""
         # Can be replaced with depth sensing or fixed locus depth mapping
         dpw = math.hypot(b.xmax - b.xmin, b.ymax - b.ymin) * frame_width
+        x_dist = y_dist = 0
         if id == 0:  # cone (labels.txt)
-            return cone_diagonal_width * focal_length / dpw
+            x_dist = cone_diagonal_width * focal_length / dpw
         else:  # cube (labels.txt)
-            return cube_diagonal_width * focal_length / dpw
+            x_dist = cube_diagonal_width * focal_length / dpw
+        y_dist = x_dist*math.atan(get_angles(b)[0])*180/math.pi
+        return Point(x_dist, y_dist)  # meters
 
     def make(i):
         """Makes a named tuple that contains output data for each detected object"""
@@ -131,13 +136,8 @@ def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
             score=scores[i],
             bbox=b,
             area=get_area(b),
-            center=Center(
-                xcenter=get_center(b)[0],
-                ycenter=get_center(b)[1]),
-            angles=Angles(
-                tx=get_angles(b)[0],
-                ty=get_angles(b)[1]
-            ),
+            center=get_center(b),
+            angles=get_angles(b),
             distance=get_distance(
                 int(class_ids[i]),
                 b
@@ -161,15 +161,6 @@ class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
     """
     __slots__ = ()
 
-
-class Center(collections.namedtuple('Center', ['xcenter', 'ycenter'])):
-    """
-    Center
-    Represents a ordered pair that points to the center of the bounding box
-    """
-    __slots__ = ()
-
-
 class Angles(collections.namedtuple('Angles', ['tx', 'ty'])):
     """
     Angles
@@ -177,7 +168,12 @@ class Angles(collections.namedtuple('Angles', ['tx', 'ty'])):
     """
     __slots__ = ()
 
-
+class Point(collections.namedtuple('Angles', ['x', 'y'])):
+    """
+    Point
+    Represents an ordered pair
+    """
+    __slots__ = ()
 # --------------------------------------------------------------------------
 
 # Labeling
