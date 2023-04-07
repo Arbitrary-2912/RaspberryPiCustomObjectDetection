@@ -346,9 +346,6 @@ def main():
         results = detect_objects(interpreter, image)
         cv2_im = overlay_text_detection(results, labels, cv2_im, fps)  # (comment out to speed up processing)
 
-        if len(results) > 0:
-            print(results[0])
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
