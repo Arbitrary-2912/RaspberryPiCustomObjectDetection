@@ -43,6 +43,9 @@ cone_diagonal_width = 0.39  # meters (object diagonal width, measured for cone)
 cube_min_max_ratio = 1  # ratio of longest side to shortest in standard bounding box (can be used for skew metrics)
 cone_min_max_ratio = 1.57  # ratio of longest side to shortest in standard bounding box (can be used for skew metrics)
 
+# NetworkTables
+net_tables = True
+
 # Model and Label Files
 
 model_dir = os.path.join('models', 'custom')
@@ -316,6 +319,7 @@ def overlay_text_detection(objs, labels, cv2_im, fps):
 
 def main():
     """Main detection function"""
+    global table
     interpreter = make_interpreter(model_path, edgetpu)
 
     interpreter.allocate_tensors()
@@ -329,6 +333,18 @@ def main():
             os.path.join(model_dir, label)
         )
     fps = 1
+
+    if net_tables:
+        nt.NetworkTables.initialize(server='10.18.16.2')
+        table = nt.NetworkTables.getTable('SmartDashboard')
+        if table:
+            print('Table Received')
+            print('Status OK')
+        table.putNumber('id', -1)  # labels id
+        table.putNumber('cx', 0)
+        table.putNumber('cy', 0)
+        table.putNumber('dx', 0)
+        table.putNumber('dy', 0)
 
     while True:
         start_time = time.time()
@@ -346,6 +362,22 @@ def main():
 
         results = detect_objects(interpreter, image)
         cv2_im = overlay_text_detection(results, labels, cv2_im, fps)  # (comment out to speed up processing)
+
+        if net_tables:
+            if len(results) > 0:
+                # Looking for best target
+                max_area = -1
+                max_result = results[0]
+                for result in results:
+                    if result.area > max_area:
+                        max_area = result.area
+                        max_result = result
+                # Outputting target data to network tables
+                table.putNumber('id', max_result.id)
+                table.putNumber('cx', max_result.angles[0])
+                table.putNumber('cy', max_result.angles[1])
+                table.putNumber('dx', max_result.distance[0])
+                table.putNumber('dy', max_result.distance[1])
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
