@@ -33,7 +33,7 @@ vertical_FOV = 48.8  # degrees
 # Distance (object_width / detected_pixel_width * focal_length)
 frame_width = 0.106  # meters (measured relay pixel correspondence / literal width of frame)
 frame_height = 0.151  # meters (measured relay pixel correspondence / literal height of frame)
-focal_length = 0.5  # meters (calibrated camera specific value)
+focal_length = 0.5 # 0.125 # meters (calibrated camera specific value)
 
 # Object dimensions (for distance measurement)
 cube_diagonal_width = 0.34  # meters (object diagonal width, measured for cube)
@@ -116,9 +116,9 @@ def detect_objects(interpreter, image, score_threshold=0.5, top_k=3):
         dpw = math.hypot(b.xmax - b.xmin, b.ymax - b.ymin) * frame_width
         x_dist = y_dist = 0
         if id == 0:  # cone (labels.txt)
-            x_dist = cone_diagonal_width * focal_length / dpw / 4
+            x_dist = cone_diagonal_width * focal_length / dpw
         else:  # cube (labels.txt)
-            x_dist = cube_diagonal_width * focal_length / dpw / 4
+            x_dist = cube_diagonal_width * focal_length / dpw
         y_dist = x_dist * math.tan(get_angles(b)[0] * math.pi / 180)
         return Point(x_dist, y_dist)  # meters
 
