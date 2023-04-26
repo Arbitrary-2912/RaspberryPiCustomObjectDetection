@@ -19,6 +19,11 @@ from PIL import Image
 import os
 import cv2
 
+# Network Properties
+hostIP = '10.18.16.2'  # roboRio IP address
+
+
+# Main properties
 cap = cv2.VideoCapture(0)
 
 edgetpu = '0'  # make it '1' if Coral Accelerator is attached and use model with 'edgetpu' name
@@ -335,7 +340,7 @@ def main():
     fps = 1
 
     if net_tables:
-        nt.NetworkTables.initialize(server='10.18.16.2')
+        nt.NetworkTables.initialize(server=hostIP)  # roboRio IP address
         table = nt.NetworkTables.getTable('SmartDashboard')
         if table:
             print('Table Received')
