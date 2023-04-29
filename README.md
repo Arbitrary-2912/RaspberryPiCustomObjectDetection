@@ -29,7 +29,7 @@ From the notebook, the corresponding models and label files can be downloaded an
 
 ## Running your custom model
 
-The packages and libraries required to run this file can be installed through bash script by running the command 'sudo sh setup.sh' in terminal. 
+The packages and libraries required to run this file can be installed through bash script by running the command 'sudo sh setup.sh' in terminal. Alternitively there is a 'requirements.txt' that can be utilized for installation, or the direct dependencies may be manually installed.
 
 Run the python file using the command 'python3 detect.py'
 
