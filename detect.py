@@ -321,6 +321,19 @@ def overlay_text_detection(objs, labels, cv2_im, fps):
 
 
 # --------------------------------------------------------------------------
+def output_result_to_tables(label, result):
+    if result is None:
+        table.putNumber(label + '/cx', 0)
+        table.putNumber(label + '/cy', 0)
+        table.putNumber(label + '/dx', 0)
+        table.putNumber(label + '/dy', 0)
+    else:
+        table.putNumber(label + '/cx', result.angles[0])
+        table.putNumber(label + '/cy', result.angles[1])
+        table.putNumber(label + '/dx', result.distance[0])
+        table.putNumber(label + '/dy', result.distance[1])
+
+# --------------------------------------------------------------------------
 
 def main():
     """Main detection function"""
@@ -345,11 +358,11 @@ def main():
         if table:
             print('Table Received')
             print('Status OK')
-        table.putNumber('id', -1)  # labels id
-        table.putNumber('cx', 0)
-        table.putNumber('cy', 0)
-        table.putNumber('dx', 0)
-        table.putNumber('dy', 0)
+        for i in range(len(labels)):  # populate table entry for each object class
+            table.putNumber(labels[i] + '/cx', 0)
+            table.putNumber(labels[i] + '/cy', 0)
+            table.putNumber(labels[i] + '/dx', 0)
+            table.putNumber(labels[i] + '/dy', 0)
 
     while True:
         start_time = time.time()
@@ -370,19 +383,21 @@ def main():
 
         if net_tables:
             if len(results) > 0:
-                # Looking for best target
-                max_area = -1
-                max_result = results[0]
+                # Looking for best target of each class
+                max_area = []
+                max_result = []
+                # Populating lists with nulls
+                for i in range(len(labels)):
+                    max_area.append(-1)
+                    max_result.append(None)
+                # Finding the largest target of each class
                 for result in results:
-                    if result.area > max_area:
-                        max_area = result.area
-                        max_result = result
+                    if result.area > max_area[result.id]:
+                        max_area[result.id] = result.area
+                        max_result[result.id] = result
                 # Outputting target data to network tables
-                table.putNumber('id', max_result.id)
-                table.putNumber('cx', max_result.angles[0])
-                table.putNumber('cy', max_result.angles[1])
-                table.putNumber('dx', max_result.distance[0])
-                table.putNumber('dy', max_result.distance[1])
+                for i in range(len(max_result)):
+                    output_result_to_tables(labels[i], max_result[i])
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
