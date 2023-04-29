@@ -289,9 +289,9 @@ def overlay_text_detection(objs, labels, cv2_im, fps):
         x0, y0, x1, y1 = int(x0 * width), int(y0 * height), int(x1 * width), int(y1 * height)
         percent = int(100 * obj.score)
 
-        if (percent >= 60):
+        if percent >= 60:
             box_color, text_color, thickness = (0, 255, 0), (0, 0, 0), 2
-        elif (percent < 60 and percent > 40):
+        elif 60 > percent > 40:
             box_color, text_color, thickness = (0, 0, 255), (0, 0, 0), 2
         else:
             box_color, text_color, thickness = (255, 0, 0), (0, 0, 0), 1
@@ -321,7 +321,7 @@ def overlay_text_detection(objs, labels, cv2_im, fps):
 
 
 # --------------------------------------------------------------------------
-def output_result_to_tables(label, result):
+def output_result_to_tables(table, label, result):
     if result is None:
         table.putNumber(label + '/cx', 0)
         table.putNumber(label + '/cy', 0)
@@ -379,7 +379,7 @@ def main():
         image = Image.fromarray(cv2_im_rgb)
 
         results = detect_objects(interpreter, image)
-        cv2_im = overlay_text_detection(results, labels, cv2_im, fps)  # (comment out to speed up processing)
+        # cv2_im = overlay_text_detection(results, labels, cv2_im, fps)  # (comment out to speed up processing)
 
         if net_tables:
             if len(results) > 0:
@@ -397,7 +397,7 @@ def main():
                         max_result[result.id] = result
                 # Outputting target data to network tables
                 for i in range(len(max_result)):
-                    output_result_to_tables(labels[i], max_result[i])
+                    output_result_to_tables(table, labels[i], max_result[i])
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
