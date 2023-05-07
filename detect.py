@@ -345,11 +345,11 @@ def main():
     if sys.platform == "win32":
         labels = load_labels(
             'models\\custom\\frc2023element_labels.txt'
-        )  # minor fix for Windows os file pathing
+        )
     else:
         labels = load_labels(
-            os.path.join(model_dir, label)
-        )
+            'models/custom/frc2023element_labels.txt'
+        )  # minor bugfix os file pathing
     fps = 1
 
     if net_tables:
