@@ -5,7 +5,7 @@ Resources:
 https://coral.ai/examples/
 https://www.tensorflow.org/lite/examples
 
-Author: The Green Machine - 2023
+Author: Keerthi Kaashyap - 2023
 """
 import math
 import sys
